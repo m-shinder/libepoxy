@@ -883,6 +883,20 @@ class Generator(object):
         self.outln(' */')
         self.outln('')
 
+        self.outln('[CCode (cheader_filename = "epoxy/gl.h")]')
+        self.outln('namespace GL {')
+
+        self.outln('// since vala has no `#ifdef` such defines are useless ')
+        self.outln('// but we keep them for API compatibility with C code')
+        for version in sorted(self.supported_versions):
+            self.outln('\tpublic const int {0};'.format(version))
+        for ext in sorted(self.supported_extensions):
+            self.outln('\tpublic const int {0};'.format(ext))
+        self.outln('')
+
+        self.outln('')
+        self.outln('}')
+
         self.close()
 
     def close(self):
