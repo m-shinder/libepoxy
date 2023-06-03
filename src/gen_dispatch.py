@@ -873,6 +873,18 @@ class Generator(object):
         for func in self.sorted_functions:
             self.write_function_pointer(func)
 
+    def write_vapi(self, out_file):
+        self.close()
+        self.out_file = open(out_file, 'w')
+
+        self.outln('/* VAPI for libepoxy GL dispatch header')
+        self.outln(' * This is code-generated from the GL API XML files from Khronos.')
+        self.write_copyright_comment_body()
+        self.outln(' */')
+        self.outln('')
+
+        self.close()
+
     def close(self):
         if self.out_file:
             self.out_file.close()
@@ -888,6 +900,8 @@ argparser.add_argument('--source', dest='source', action='store_true', required=
 argparser.add_argument('--no-source', dest='source', action='store_false', required=False, help='Do not generate the source file')
 argparser.add_argument('--header', dest='header', action='store_true', required=False, help='Generate the header file')
 argparser.add_argument('--no-header', dest='header', action='store_false', required=False, help='Do not generate the header file')
+argparser.add_argument('--vapi', dest='vapi', action='store_true', required=False, help='Generate the vapi file')
+argparser.add_argument('--no-vapi', dest='vapi', action='store_false', required=False, help='Do not generate the vapi file')
 args = argparser.parse_args()
 
 if args.outputdir:
@@ -907,8 +921,9 @@ else:
 
 build_source = args.source
 build_header = args.header
+build_vapi = args.vapi
 
-if not build_source and not build_header:
+if not build_source and not build_header and not build_vapi:
     build_source = True
     build_header = True
 
@@ -943,5 +958,8 @@ for f in args.files:
         generator.write_header(os.path.join(includedir, name + '_generated.h'))
     if build_source:
         generator.write_source(os.path.join(srcdir, name + '_generated_dispatch.c'))
+
+    if build_vapi:
+        generator.write_vapi(os.path.join(includedir, name + '_generated.vapi'))
 
     generator.close()
