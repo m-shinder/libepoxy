@@ -171,6 +171,7 @@ class GLFunction(object):
 class Generator(object):
     def __init__(self, target):
         self.target = target
+        self.groups = {}
         self.enums = {}
         self.typedefs = []
         self.functions = {}
@@ -255,6 +256,16 @@ class Generator(object):
 
             self.max_enum_name_len = max(self.max_enum_name_len, len(name))
             self.enums[name] = enum.get('value')
+
+            groups = enum.get('group', default='').split(',')
+            for group in groups:
+                if group in self.groups:
+                    self.groups[group].append(name)
+                else:
+                    self.groups[group] = [name]
+        # since ''.split(',') == ['']
+        # and groupless enums go there
+        del self.groups['']
 
     def get_function_return_type(self, proto):
         # Everything up to the start of the name element is the return type.
