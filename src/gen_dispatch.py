@@ -905,7 +905,16 @@ class Generator(object):
             self.outln('\tpublic const int {0};'.format(ext))
         self.outln('')
 
+        self.outln('// Elements name for vala are subject to change, (i would like make them bit shorter)')
+        for group, elems in self.groups.items():
+            ## Prefix could be enum name but there is edge cases
+            self.outln('\t[CCode (cname = "int", cprefix = "{0}", has_type_id = false)]'.format(""))
+            self.outln('\tpublic enum {0} {{'.format(group))
+            for elem in elems:
+                self.outln('\t\t [CCode (cname = "{0}")] {1},'.format(elem, elem))
+            self.outln('\t}')
         self.outln('')
+
         self.outln('}')
 
         self.close()
