@@ -22,11 +22,30 @@
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 # IN THE SOFTWARE.
 
+from functools import reduce
 import sys
 import argparse
 import xml.etree.ElementTree as ET
 import re
 import os
+
+class Typedef(object):
+    def __init__(self, tag):
+        self.prefix = tag.text or ''
+
+        self.is_apientry = True if tag.find('apientry') != None else False
+
+        if (name := tag.find('name')) != None:
+            self.name = name.text
+            self.postfix = name.tail
+        else:
+            self.name = self.postfix = ''
+    
+    def __str__(self):
+        apientry = 'APIENTRY *' if self.is_apientry else '';
+        return self.prefix + apientry + self.name + self.postfix + '\n'
+
+
 
 class GLProvider(object):
     def __init__(self, condition, condition_name, loader, name):
@@ -153,13 +172,14 @@ class Generator(object):
     def __init__(self, target):
         self.target = target
         self.enums = {}
+        self.typedefs = []
         self.functions = {}
         self.sorted_functions = []
         self.enum_string_offset = {}
         self.max_enum_name_len = 1
         self.entrypoint_string_offset = {}
         self.copyright_comment = None
-        self.typedefs = ''
+        self.typedefs_string = ''
         self.out_file = None
 
         # GL versions named in the registry, which we should generate
@@ -217,17 +237,12 @@ class Generator(object):
             if api:
                 continue
 
-            if t.text is not None:
-                self.typedefs += t.text
-
-            for child in t:
-                if child.tag == 'apientry':
-                    self.typedefs += 'APIENTRY'
-                if child.text:
-                    self.typedefs += child.text
-                if child.tail:
-                    self.typedefs += child.tail
-            self.typedefs += '\n'
+            self.typedefs.append(Typedef(t))
+        self.typedefs_string = reduce(
+                lambda x,y: x+y,
+                map(str, self.typedefs),
+                self.typedefs_string
+            )
 
     def parse_enums(self, reg):
         for enum in reg.findall('enums/enum'):
@@ -540,7 +555,7 @@ class Generator(object):
             self.outln('#include <X11/Xlib.h>')
             self.outln('#include <X11/Xutil.h>')
 
-        self.out(self.typedefs)
+        self.out(self.typedefs_string)
         self.outln('')
         self.write_enums()
         self.outln('')
