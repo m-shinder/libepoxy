@@ -885,6 +885,7 @@ class Generator(object):
             self.write_function_pointer(func)
 
     def write_vapi(self, out_file):
+        vapi_extract_ctype = lambda x: x[8:].replace('unsigned ', 'u')
         self.close()
         self.out_file = open(out_file, 'w')
 
@@ -896,6 +897,57 @@ class Generator(object):
 
         self.outln('[CCode (cheader_filename = "epoxy/gl.h")]')
         self.outln('namespace GL {')
+
+        self.outln('\t// These types should be defined in `khrplatform.h`')
+        self.outln('\t// but libepoxy defines them explicitly instead of including.')
+        self.outln('\t// Names kept in C-style for easier inheritance handling.')
+        self.outln('\t[SimpleType] public struct khronos_int8_t : int8 {}')
+        self.outln('\t[SimpleType] public struct khronos_int16_t : int16 {}')
+        self.outln('\t[SimpleType] public struct khronos_int32_t : int32 {}')
+        self.outln('\t[SimpleType] public struct khronos_int64_t : int64 {}')
+        self.outln('\t[SimpleType] public struct khronos_uint8_t : uint8 {}')
+        self.outln('\t[SimpleType] public struct khronos_uint16_t : uint16 {}')
+        self.outln('\t[SimpleType] public struct khronos_uint32_t : uint32 {}')
+        self.outln('\t[SimpleType] public struct khronos_uint64_t : uint64 {}')
+        self.outln('\t[SimpleType] public struct khronos_float_t : float {}')
+        self.outln('\t[SimpleType] public struct khronos_intptr_t  : long {}')
+        self.outln('\t[SimpleType] public struct khronos_uintptr_t : ulong {}')
+        self.outln('\t[SimpleType] public struct khronos_ssize_t : long {}')
+        self.outln('\t[SimpleType] public struct khronos_usize_t : ulong {}')
+        self.outln('\t[SimpleType] public struct khronos_utime_nanoseconds_t : uint64 {}')
+        self.outln('\t[SimpleType] public struct khronos_stime_nanoseconds_t : int64 {}')
+        self.outln('\tpublic const int KHRONOS_MAX_ENUM;')
+        self.outln('\tpublic enum khronos_boolean_enum_t {')
+        self.outln('\t    [CCode(cname = "KHRONOS_FALSE")] FALSE,')
+        self.outln('\t    [CCode(cname = "KHRONOS_TRUE")] TRUE,')
+        self.outln('\t    [CCode(cname = "KHRONOS_BOOLEAN_ENUM_FORCE_SIZE")] FORCE_SIZE,')
+        self.outln('\t}')
+        self.outln('')
+
+        self.outln('\t[CCode (cname = "{0}", cprefix = "{1}")]'.format('GLsync', ''))
+        self.outln('\t[Compact]')
+        self.outln('\tpublic class GLsync : {\n\t}')
+        self.outln('\t[CCode (cname = "{0}", cprefix = "{1}")]'.format('GLhandleARB', ''))
+        self.outln('\t[SimpleType]')
+        self.outln('\tpublic struct {0} : {1} {{\n\t}}'.format('GLhandleARB', 'uint'))
+
+        for typedef in self.typedefs:
+            # XXX some structures still missing
+            if not typedef.is_apientry and typedef.name not in {'', 'GLhandleARB', 'GLsync'} and typedef.prefix not in {''}:
+                self.outln('\t[CCode (cname = "{0}", cprefix = "{1}")]'.format(typedef.name, ''))
+                self.outln('\t[SimpleType]')
+                self.outln('\tpublic struct {0} : {1} {{\n\t}}'.format(
+                        typedef.name,
+                        vapi_extract_ctype(typedef.prefix))
+                    )
+            elif typedef.is_apientry:
+                self.outln('\t[CCode (cname = "{0}", cprefix = "{1}", has_target="false")]'.format(typedef.name, ''))
+                self.outln('\tpublic delegate {0} {1} {2}'.format(
+                        vapi_extract_ctype(typedef.prefix),
+                        typedef.name,
+                        typedef.postfix[1:]
+                    ))
+        self.outln('')
 
         self.outln('// since vala has no `#ifdef` such defines are useless ')
         self.outln('// but we keep them for API compatibility with C code')
