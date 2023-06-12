@@ -967,6 +967,32 @@ class Generator(object):
             self.outln('\t}')
         self.outln('')
 
+        # In C it is 'typedef {0} (GLAPIENTRY *{1})({2});'.format(func.ret_type, func.ptr_type, func.args_decl)
+        for func in self.sorted_functions:
+            self.outln('\t[CCode (cname = "{0}", cprefix = "{1}")]'.format(func.ptr_type, ''))
+            self.outln('\tpublic delegate {0} {1}({2});'.format(func.ret_type,
+                    func.ptr_type,
+                    func.args_decl)
+                )
+        self.outln('')
+
+        for func in self.sorted_functions:
+            self.outln('\t[CCode (cname = "{0}", cprefix = "{1}")]'.format(func.name, ''))
+            self.outln('\tpublic {0} epoxy_{1}({2});'.format(
+                    func.ret_type,
+                    func.name,
+                    func.args_decl
+                ))
+        self.outln('')
+
+        for func in self.sorted_functions:
+            self.outln('\t[CCode (cname = "{0}", cprefix = "{1}")]'.format(func.name, ''))
+            self.outln('\tpublic {0} {1}({2});'.format(
+                    func.ret_type,
+                    func.name,
+                    func.args_decl
+                ))
+
         self.outln('}')
 
         self.close()
