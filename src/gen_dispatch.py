@@ -885,7 +885,11 @@ class Generator(object):
             self.write_function_pointer(func)
 
     def write_vapi(self, out_file):
-        vapi_extract_ctype = lambda x: x[8:].replace('unsigned ', 'u')
+        vapi_fix_ret_type = lambda x: x.replace('const ', '')
+        vapi_extract_ctype = lambda x: x[8:].replace('unsigned ', 'u').replace(' (', '')
+        vapi_remove_invalid_args = lambda x: '' if x == 'void' else \
+            x.replace('(void)','()').replace('const ', '').replace('const*', '*') \
+                .replace('struct _cl_', '_cl_')
         self.close()
         self.out_file = open(out_file, 'w')
 
@@ -969,28 +973,29 @@ class Generator(object):
 
         # In C it is 'typedef {0} (GLAPIENTRY *{1})({2});'.format(func.ret_type, func.ptr_type, func.args_decl)
         for func in self.sorted_functions:
-            self.outln('\t[CCode (cname = "{0}", cprefix = "{1}")]'.format(func.ptr_type, ''))
-            self.outln('\tpublic delegate {0} {1}({2});'.format(func.ret_type,
+            self.outln('\t[CCode (cname = "{0}", cprefix = "{1}", has_target = "false")]'.format(func.ptr_type, ''))
+            self.outln('\tpublic delegate {0} {1}({2});'.format(
+                    vapi_fix_ret_type(func.ret_type),
                     func.ptr_type,
-                    func.args_decl)
-                )
+                    vapi_remove_invalid_args(func.args_decl)
+                ))
         self.outln('')
 
         for func in self.sorted_functions:
             self.outln('\t[CCode (cname = "{0}", cprefix = "{1}")]'.format(func.name, ''))
             self.outln('\tpublic {0} epoxy_{1}({2});'.format(
-                    func.ret_type,
+                    vapi_fix_ret_type(func.ret_type),
                     func.name,
-                    func.args_decl
+                    vapi_remove_invalid_args(func.args_decl)
                 ))
         self.outln('')
 
         for func in self.sorted_functions:
             self.outln('\t[CCode (cname = "{0}", cprefix = "{1}")]'.format(func.name, ''))
             self.outln('\tpublic {0} {1}({2});'.format(
-                    func.ret_type,
+                    vapi_fix_ret_type(func.ret_type),
                     func.name,
-                    func.args_decl
+                    vapi_remove_invalid_args(func.args_decl)
                 ))
 
         self.outln('}')
