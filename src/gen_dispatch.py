@@ -928,28 +928,49 @@ class Generator(object):
         self.outln('\t}')
         self.outln('')
 
+        # Types that are unique and writed separately
         self.outln('\t[CCode (cname = "{0}", cprefix = "{1}")]'.format('GLsync', ''))
         self.outln('\t[Compact]')
-        self.outln('\tpublic class GLsync : {\n\t}')
+        self.outln('\tpublic class GLsync {\n\t}')
         self.outln('\t[CCode (cname = "{0}", cprefix = "{1}")]'.format('GLhandleARB', ''))
         self.outln('\t[SimpleType]')
         self.outln('\tpublic struct {0} : {1} {{\n\t}}'.format('GLhandleARB', 'uint'))
 
+        self.outln('\t[CCode (cname = "{0}", cprefix = "{1}")]'.format('struct _cl_context', ''))
+        self.outln('\t[SimpleType]')
+        self.outln('\tpublic struct {0} {{\n\t}}'.format('_cl_context', ''))
+        self.outln('\t[CCode (cname = "{0}", cprefix = "{1}")]'.format('_cl_event', ''))
+        self.outln('\t[SimpleType]')
+        self.outln('\tpublic struct {0} {{\n\t}}'.format('_cl_event', ''))
+
         for typedef in self.typedefs:
-            # XXX some structures still missing
             if not typedef.is_apientry and typedef.name not in {'', 'GLhandleARB', 'GLsync'} and typedef.prefix not in {''}:
-                self.outln('\t[CCode (cname = "{0}", cprefix = "{1}")]'.format(typedef.name, ''))
-                self.outln('\t[SimpleType]')
-                self.outln('\tpublic struct {0} : {1} {{\n\t}}'.format(
-                        typedef.name,
-                        vapi_extract_ctype(typedef.prefix))
-                    )
+                # void is not valid type to inherit in vala and void* types meant to be classes
+                if vapi_extract_ctype(typedef.prefix) == 'void *':
+                    self.outln('\t[CCode (cname = "{0}", cprefix = "{1}")]'.format(typedef.name, ''))
+                    self.outln('\t[Compact]')
+                    self.outln('\tpublic class {0} {{\n\t}}'.format(
+                            typedef.name
+                        ))
+                elif vapi_extract_ctype(typedef.prefix) == 'void ':
+                    self.outln('\t[CCode (cname = "{0}", cprefix = "{1}")]'.format(typedef.name, ''))
+                    self.outln('\t[SimpleType]')
+                    self.outln('\tpublic struct {0} {{\n\t}}'.format(
+                            typedef.name
+                        ))
+                else:
+                    self.outln('\t[CCode (cname = "{0}", cprefix = "{1}")]'.format(typedef.name, ''))
+                    self.outln('\t[SimpleType]')
+                    self.outln('\tpublic struct {0} : {1} {{\n\t}}'.format(
+                            typedef.name,
+                            vapi_extract_ctype(typedef.prefix)
+                        ))
             elif typedef.is_apientry:
                 self.outln('\t[CCode (cname = "{0}", cprefix = "{1}", has_target="false")]'.format(typedef.name, ''))
                 self.outln('\tpublic delegate {0} {1} {2}'.format(
                         vapi_extract_ctype(typedef.prefix),
                         typedef.name,
-                        typedef.postfix[1:]
+                        vapi_remove_invalid_args(typedef.postfix[1:])
                     ))
         self.outln('')
 
