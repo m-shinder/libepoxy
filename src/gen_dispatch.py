@@ -157,7 +157,7 @@ class GLFunction(object):
         # for all of them.
         self.alias_exts = []
 
-    def add_arg(self, arg_type, arg_name):
+    def add_arg(self, arg_type, arg_name, **kwargs):
         # Reword glDepthRange() arguments to avoid clashing with the
         # "near" and "far" keywords on win32.
         if arg_name == "near":
@@ -169,6 +169,11 @@ class GLFunction(object):
             'type': arg_type,
             'name': arg_name,
         }
+        if arg_type == 'GLenum':
+            if 'group' in kwargs:
+                arg['group'] = kwargs['group']
+            else:
+                arg['group'] = None
         self.args.append(arg)
 
     def add_provider(self, condition, loader, condition_name):
@@ -294,7 +299,7 @@ class Generator(object):
 
             for arg in command.findall('param'):
                 func.add_arg(self.all_text_until_element_name(arg, 'name').strip(),
-                             arg.find('name').text)
+                             arg.find('name').text, group = arg.get('group', default=None))
 
             alias = command.find('alias')
             if alias is not None:
