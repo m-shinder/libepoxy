@@ -73,6 +73,48 @@ class GLProvider(object):
         self.enum = "PROVIDER_" + self.enum
 
 class GLFunction(object):
+    @property
+    def args_list(self):
+        # Mac screwed up GLhandleARB and made it a void * instead of
+        # uint32_t, despite it being specced as only necessarily 32
+        # bits wide, causing portability problems all over.  There are
+        # prototype conflicts between things like
+        # glAttachShader(GLuint program, GLuint shader) and
+        # glAttachObjectARB(GLhandleARB container, GLhandleARB obj),
+        # even though they are marked as aliases in the XML (and being
+        # aliases in Mesa).
+        #
+        # We retain those aliases.  In the x86_64 ABI, the first 6
+        # args are stored in 64-bit registers, so the calls end up
+        # being the same despite the different types.  We just need to
+        # add a cast to uintptr_t to shut up the compiler.
+        result = ''
+        arg_number = 0
+        for arg in self.args:
+            if arg['type'] == 'GLhandleARB':
+                assert arg_number < 6
+                arg_list_name = '(uintptr_t)' + arg['name']
+            else:
+                arg_list_name = arg['name']
+
+            if result != '':
+                result += ', '
+            result += arg_list_name
+            arg_number += 1
+
+        return result
+
+    @property
+    def args_decl(self):
+        result = ', '.join(list(map(
+                lambda arg: arg['type'] + ' ' + arg['name'],
+                self.args
+            )))
+        if result != '':
+            return result
+        else:
+            return 'void'
+
     def __init__(self, ret_type, name):
         self.name = name
         self.ptr_type = 'PFN' + name.upper() + 'PROC'
@@ -99,14 +141,6 @@ class GLFunction(object):
             self.wrapped_name = name
             self.public = 'EPOXY_PUBLIC '
 
-        # This is the string of C code for passing through the
-        # arguments to the function.
-        self.args_list = ''
-
-        # This is the string of C code for declaring the arguments
-        # list.
-        self.args_decl = 'void'
-
         # This is the string name of the function that this is an
         # alias of, or self.name.  This initially comes from the
         # registry, and may get updated if it turns out our alias is
@@ -131,32 +165,11 @@ class GLFunction(object):
         elif arg_name == "far":
             arg_name = "yon"
 
-        # Mac screwed up GLhandleARB and made it a void * instead of
-        # uint32_t, despite it being specced as only necessarily 32
-        # bits wide, causing portability problems all over.  There are
-        # prototype conflicts between things like
-        # glAttachShader(GLuint program, GLuint shader) and
-        # glAttachObjectARB(GLhandleARB container, GLhandleARB obj),
-        # even though they are marked as aliases in the XML (and being
-        # aliases in Mesa).
-        #
-        # We retain those aliases.  In the x86_64 ABI, the first 6
-        # args are stored in 64-bit registers, so the calls end up
-        # being the same despite the different types.  We just need to
-        # add a cast to uintptr_t to shut up the compiler.
-        if arg_type == 'GLhandleARB':
-            assert len(self.args) < 6
-            arg_list_name = '(uintptr_t)' + arg_name
-        else:
-            arg_list_name = arg_name
-
-        self.args.append((arg_type, arg_name))
-        if self.args_decl == 'void':
-            self.args_list = arg_list_name
-            self.args_decl = arg_type + ' ' + arg_name
-        else:
-            self.args_list += ', ' + arg_list_name
-            self.args_decl += ', ' + arg_type + ' ' + arg_name
+        arg = {
+            'type': arg_type,
+            'name': arg_name,
+        }
+        self.args.append(arg)
 
     def add_provider(self, condition, loader, condition_name):
         self.providers[condition_name] = GLProvider(condition, condition_name,
