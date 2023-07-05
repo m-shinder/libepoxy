@@ -169,7 +169,7 @@ class GLFunction(object):
             'type': arg_type,
             'name': arg_name,
         }
-        if arg_type == 'GLenum':
+        if arg_type in [ 'GLenum', 'GLbitfield' ]:
             if 'group' in kwargs:
                 arg['group'] = kwargs['group']
             else:
@@ -908,6 +908,13 @@ class Generator(object):
         vapi_remove_invalid_args = lambda x: '' if x == 'void' else \
             x.replace('(void)','()').replace('const ', '').replace('const*', '*') \
                 .replace('struct _cl_', '_cl_')
+        def vapi_func_args_decl(func):
+            validify = lambda x: x.replace('const ', '').replace('const*', '*').replace('struct _cl_', '_cl_')
+            result = ', '.join(list(map(
+                    lambda arg: (arg.get('group') or validify(arg['type'])) + ' ' + arg['name'],
+                    func.args
+                )))
+            return result
         self.close()
         self.out_file = open(out_file, 'w')
 
@@ -1001,6 +1008,7 @@ class Generator(object):
         self.outln('')
 
         self.outln('// Elements name for vala are subject to change, (i would like make them bit shorter)')
+        self.outln('// Sadly it\'s hard to differ usual enums from bitfields to set [Flags] attribute')
         for group, elems in self.groups.items():
             ## Prefix could be enum name but there is edge cases
             self.outln('\t[CCode (cname = "int", cprefix = "{0}", has_type_id = false)]'.format(""))
@@ -1034,7 +1042,7 @@ class Generator(object):
             self.outln('\tpublic {0} {1}({2});'.format(
                     vapi_fix_ret_type(func.ret_type),
                     func.name,
-                    vapi_remove_invalid_args(func.args_decl)
+                    vapi_func_args_decl(func)
                 ))
 
         self.outln('}')
