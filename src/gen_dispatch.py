@@ -941,7 +941,18 @@ class Generator(object):
         self.outln('\t[SimpleType] public struct khronos_float_t : float {}')
         self.outln('\t[SimpleType] public struct khronos_intptr_t  : long {}')
         self.outln('\t[SimpleType] public struct khronos_uintptr_t : ulong {}')
-        self.outln('\t[SimpleType] public struct khronos_ssize_t : long {}')
+        ### From https://developer-old.gnome.org/glib/stable/glib-Basic-Types.html#gint64
+        ## typedef signed long gint64;
+        ## From https://github.com/KhronosGroup/EGL-Registry/blob/main/api/KHR/khrplatform.h
+        ## typedef signed   long  int     khronos_ssize_t;
+        ## So `gint64` and `khronos_ssize_t` should be identical
+        ##
+        ## But vala's `sizeof()` returns `ulong`
+        ## which cannot be implicitly converted to `khronos_ssize_t`
+        ## So I decided to define it as `gint64` in order to allow implicit conversion
+        ## `khronos_usize_t` fits for `sizeof()` so expanding it isn't necesary
+        self.outln('\t// XXX: Actually it\'s `long` Look into `src/gen_dispatch.py` for explanation')
+        self.outln('\t[SimpleType] public struct khronos_ssize_t : int64 {}')
         self.outln('\t[SimpleType] public struct khronos_usize_t : ulong {}')
         self.outln('\t[SimpleType] public struct khronos_utime_nanoseconds_t : uint64 {}')
         self.outln('\t[SimpleType] public struct khronos_stime_nanoseconds_t : int64 {}')
@@ -1026,6 +1037,12 @@ class Generator(object):
                     func.ptr_type,
                     vapi_remove_invalid_args(func.args_decl)
                 ))
+        self.outln('')
+
+        self.outln('\t// Huge workaround cause vala\'s sizeof() returns ulong')
+        self.outln('\t// Should be called with constants instead of types')
+        self.outln('\t[CCode (cname = "sizeof", simple_generics = true)]')
+        self.outln('\tGLsizei glSizeof<T>(T x);')
         self.outln('')
 
         for func in self.sorted_functions:
