@@ -16,6 +16,7 @@ epoxy_prefix = get_option('prefix')
 epoxy_libdir = join_paths(epoxy_prefix, get_option('libdir'))
 epoxy_datadir = join_paths(epoxy_prefix, get_option('datadir'))
 epoxy_includedir = join_paths(epoxy_prefix, get_option('includedir'))
+epoxy_vapidir =  join_paths(get_option('prefix'), get_option('datadir'), 'vala/vapi/')
 
 cc = meson.get_compiler('c')
 host_system = host_machine.system()
@@ -29,6 +30,8 @@ conf.set_quoted('PACKAGE_LIBDIR', join_paths(get_option('prefix'), get_option('l
 conf.set_quoted('PACKAGE_LOCALEDIR', join_paths(get_option('prefix'), get_option('datadir'), 'locale'))
 conf.set_quoted('PACKAGE_LIBEXECDIR', join_paths(get_option('prefix'), get_option('libexecdir')))
 conf.set('HAVE_KHRPLATFORM_H', cc.has_header('KHR/khrplatform.h'))
+
+conf.set_quoted('PACKAGE_VAPIDIR', join_paths(get_option('prefix'), get_option('datadir'), 'vala/vapi/'))
 
 # GLX can be used on different platforms, so we expose a
 # configure time switch to enable or disable it; in case
@@ -213,6 +216,9 @@ libepoxy_inc = [
 ]
 
 subdir('include/epoxy')
+if get_option('vapi').enabled()
+  subdir('include/vapi')
+endif
 subdir('src')
 
 if get_option('tests')
