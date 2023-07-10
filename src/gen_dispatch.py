@@ -1141,6 +1141,6 @@ for f in args.files:
         generator.write_source(os.path.join(srcdir, name + '_generated_dispatch.c'))
 
     if build_vapi:
-        generator.write_vapi(os.path.join(includedir, name + '_generated.vapi'))
+        generator.write_vapi(os.path.join(includedir, name + '.vapi'))
 
     generator.close()
