@@ -1009,6 +1009,10 @@ class Generator(object):
                         vapi_remove_invalid_args(typedef.postfix[1:])
                     ))
         self.outln('')
+        self.outln('\t[CCode (cname = "GL_FALSE")]')
+        self.outln('\tpublic const GLboolean GL_FALSE;')
+        self.outln('\t[CCode (cname = "GL_TRUE")]')
+        self.outln('\tpublic const GLboolean GL_TRUE;')
 
         self.outln('// since vala has no `#ifdef` such defines are useless ')
         self.outln('// but we keep them for API compatibility with C code')
