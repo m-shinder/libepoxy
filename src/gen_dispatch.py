@@ -906,8 +906,8 @@ class Generator(object):
         vapi_fix_ret_type = lambda x: x.replace('const ', '')
         vapi_extract_ctype = lambda x: x[8:].replace('unsigned ', 'u').replace(' (', '')
         vapi_remove_invalid_args = lambda x: '' if x == 'void' else \
-            x.replace('(void)','()').replace('const ', '').replace('const*', '*') \
-                .replace('struct _cl_', '_cl_')
+            x.replace('(void)','()').replace('const GLchar *','GLstring ') \
+                .replace('const ', '').replace('const*', '*').replace('struct _cl_', '_cl_')
         def vapi_func_args_decl(func):
             validify = lambda x: x.replace('const ', '').replace('const*', '*').replace('struct _cl_', '_cl_')
             result = ', '.join(list(map(
@@ -1008,6 +1008,20 @@ class Generator(object):
                         typedef.name,
                         vapi_remove_invalid_args(typedef.postfix[1:])
                     ))
+        self.outln('\t// This class is totally made up in order to ease conversion between str types')
+        self.outln('\t[CCode (cname = "const GLchar", cprefix = "")]')
+        self.outln('\t[Compact]')
+        self.outln('\t[Immutable]')
+        self.outln('\tpublic class GLstring : string  {')
+        self.outln('\t\t[CCode (cname = "(char*)" )]')
+        self.outln('\t\tpublic static GLstring from_array(char* arr);')
+        self.outln('\t\t[CCode (cname = "_vapi_GLstring_from_string" )]')
+        self.outln('\t\tpublic static GLstring from_string(string s) {')
+        self.outln('\t\t\treturn GLstring.from_array(s.data);')
+        self.outln('\t\t}')
+        self.outln('\t\t[CCode (cname = "(char*)" )]')
+        self.outln('\t\tpublic string to_string();')
+        self.outln('\t}')
         self.outln('')
         self.outln('\t[CCode (cname = "GL_FALSE")]')
         self.outln('\tpublic const GLboolean GL_FALSE;')
