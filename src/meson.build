@@ -82,6 +82,8 @@ epoxy_has_glx = build_glx ? '1' : '0'
 epoxy_has_egl = build_egl ? '1' : '0'
 epoxy_has_wgl = build_wgl ? '1' : '0'
 
+epoxy_has_vapi = gen_vapi ? '1' : '0'
+
 libepoxy_dep = declare_dependency(
   link_with: libepoxy,
   include_directories: libepoxy_inc,
@@ -91,6 +93,7 @@ libepoxy_dep = declare_dependency(
     'epoxy_has_glx': epoxy_has_glx,
     'epoxy_has_egl': epoxy_has_egl,
     'epoxy_has_wgl': epoxy_has_wgl,
+    'epoxy_has_vapi': epoxy_has_vapi,
   },
 )
 meson.override_dependency('epoxy', libepoxy_dep)
@@ -116,6 +119,7 @@ pkg.generate(
     'epoxy_has_glx=@0@'.format(epoxy_has_glx),
     'epoxy_has_egl=@0@'.format(epoxy_has_egl),
     'epoxy_has_wgl=@0@'.format(epoxy_has_wgl),
+    'epoxy_has_vapi=@0@'.format(epoxy_has_vapi),
   ],
   filebase: 'epoxy',
   requires_private: ' '.join(gl_reqs),

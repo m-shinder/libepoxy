@@ -214,9 +214,10 @@ libepoxy_inc = [
   include_directories('include'),
   include_directories('src'),
 ]
+gen_vapi = get_option('vapi').enabled()
 
 subdir('include/epoxy')
-if get_option('vapi').enabled()
+if gen_vapi
   subdir('include/vapi')
 endif
 subdir('src')
