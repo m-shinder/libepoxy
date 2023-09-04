@@ -994,6 +994,13 @@ class Generator(object):
                     self.outln('\tpublic struct {0} {{\n\t}}'.format(
                             typedef.name
                         ))
+                elif typedef.name == 'GLboolean':
+                    self.outln('\t[CCode (cname = "{0}", cprefix = "{1}")]'.format(typedef.name, ''))
+                    self.outln('\t[SimpleType]')
+                    self.outln('\tpublic struct {0} : {1} {{\n\t}}'.format(
+                            typedef.name,
+                            'bool'
+                        ))
                 else:
                     self.outln('\t[CCode (cname = "{0}", cprefix = "{1}")]'.format(typedef.name, ''))
                     self.outln('\t[SimpleType]')
@@ -1024,9 +1031,9 @@ class Generator(object):
         self.outln('\t}')
         self.outln('')
         self.outln('\t[CCode (cname = "GL_FALSE")]')
-        self.outln('\tpublic const GLboolean GL_FALSE;')
+        self.outln('\tpublic const GLboolean FALSE;')
         self.outln('\t[CCode (cname = "GL_TRUE")]')
-        self.outln('\tpublic const GLboolean GL_TRUE;')
+        self.outln('\tpublic const GLboolean TRUE;')
 
         self.outln('// since vala has no `#ifdef` such defines are useless ')
         self.outln('// but we keep them for API compatibility with C code')
