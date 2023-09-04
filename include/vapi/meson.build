@@ -37,4 +37,4 @@ foreach g: generated_vapi
 endforeach
 
 epoxy_vapis = gen_vapis
-
+epoxy_vapidir = meson.currrent_build_dir()
