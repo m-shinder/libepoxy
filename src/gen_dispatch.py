@@ -1038,12 +1038,13 @@ class Generator(object):
 
         self.outln('// Elements name for vala are subject to change, (i would like make them bit shorter)')
         self.outln('// Sadly it\'s hard to differ usual enums from bitfields to set [Flags] attribute')
+        from name_shortener import shorten
         for group, elems in self.groups.items():
-            ## Prefix could be enum name but there is edge cases
-            self.outln('\t[CCode (cname = "int", cprefix = "{0}", has_type_id = false)]'.format(""))
-            self.outln('\tpublic enum {0} {{'.format(group))
-            for elem in elems:
-                self.outln('\t\t [CCode (cname = "{0}")] {1},'.format(elem, elem))
+            enum, items = shorten(group, elems)
+            self.outln('\t[CCode (cname = "int", cprefix = "", has_type_id = false)]')
+            self.outln('\tpublic enum {0} {{'.format(enum))
+            for item in items:
+                self.outln('\t\t [CCode (cname = "{0}")] {1},'.format(item[0], item[1]))
             self.outln('\t}')
         self.outln('')
 

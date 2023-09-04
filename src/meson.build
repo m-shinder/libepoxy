@@ -30,6 +30,7 @@ foreach g: generated_sources
   source = g[2]
 
   generated = custom_target(gen_source,
+                            depend_files: ['name_shortener.py'],
                             input: registry,
                             output: [ gen_source ],
                             command: [
